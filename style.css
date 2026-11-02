@@ -50,6 +50,8 @@ body { font: 400 17px/1.5 Literata, Georgia, serif; display: flex; justify-conte
   mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent), linear-gradient(#000 82%, transparent);
   -webkit-mask-composite: source-in; mask-composite: intersect; opacity: 0; transform: translateY(10px); transition: opacity .35s ease, transform .5s var(--ease); }
 #sprite.on { opacity: 1; transform: none; }
+#sprite.left { translate: -20% 0; }
+#sprite.right { translate: 20% 0; }
 #sprite-wrap { animation: breathe 6s ease-in-out infinite; transform-origin: 50% 100%; }
 @keyframes breathe { 50% { transform: scale(1.008); } }
 

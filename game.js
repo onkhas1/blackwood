@@ -67,7 +67,9 @@
     const key = `${whoKey}_${emo}`;
     if (sprite.dataset.key === key) return;
     sprite.dataset.key = key;
-    sprite.style.height = whoKey === 'karen' ? '78%' : '';
+    sprite.classList.toggle('left', whoKey === 'heroine');
+    sprite.classList.toggle('right', whoKey !== 'heroine');
+    sprite.style.height = whoKey === 'karen' ? '90%' : '';
     sprite.classList.remove('on');
     const url = `assets/sprites/${key}.webp`;
     if (sprite.getAttribute('src') === url && sprite.complete && sprite.naturalWidth) { sprite.classList.add('on'); return; }
