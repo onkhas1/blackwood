@@ -4,7 +4,7 @@ const say = (who, emo, t) => ({ type: 'line', who, emo, t, speak: true });
 const me = (emo, t) => ({ type: 'line', who: 'heroine', emo, t, isMe: true });
 const bg = (id) => ({ type: 'bg', id });
 const hide = () => ({ type: 'hide' });
-const choice = (…options) => ({ type: 'choice', options });
+const choice = (...options) => ({ type: 'choice', options });
 const opt = (t, set, then = []) => ({ t, set, then });
 
 window.STORY = [
