@@ -28,6 +28,7 @@
   let rainOn = true;
   let path = [];      // стек позиций: [{ list, i }]
   let state = { name: '', pts: {} };
+  let reveal = null;
   let waiting = null; // что делает тап
   let curBg = null, bgLayer = 0;
 
@@ -78,13 +79,32 @@
     for (const x of [box, choices, nameForm, letter]) x.hidden = x !== el;
   }
 
+  // Текст появляется по нескольку слов, а окно сразу занимает итоговый размер.
+  // Первый тап показывает всё, следующий ведёт дальше.
   function showText(str, done) {
-    box.classList.add('done');
-    text.textContent = str;
-    text.classList.remove('in');
-    void text.offsetWidth;
-    text.classList.add('in');
-    done();
+    clearInterval(reveal);
+    box.classList.remove('done');
+    text.textContent = '';
+    const words = str.split(' ').filter(Boolean).map((w, idx, all) => {
+      const s = document.createElement('span');
+      s.textContent = w + (idx < all.length - 1 ? ' ' : '');
+      text.append(s);
+      return s;
+    });
+    const finish = () => {
+      clearInterval(reveal);
+      words.forEach((s) => s.classList.add('on'));
+      box.classList.add('done');
+      done();
+    };
+    if (!words.length || matchMedia('(prefers-reduced-motion: reduce)').matches) return finish();
+    let k = 0;
+    const tick = () => {
+      for (let n = 0; n < 2 && k < words.length; n++) words[k++].classList.add('on');
+      if (k >= words.length) finish();
+    };
+    tick();
+    if (k < words.length) { reveal = setInterval(tick, 130); waiting = finish; }
   }
 
   function next() {
