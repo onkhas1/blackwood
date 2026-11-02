@@ -129,7 +129,6 @@
     const tone = step.isMe ? 'heroine' : step.speak ? step.who : '';
     box.classList.toggle('speech', !!tone);
     box.classList.toggle('story', !tone);
-    box.classList.toggle('low', curBg === 'bridge');
     box.style.setProperty('--accent', ACCENT[tone] || 'transparent');
     (step.fx || '').split(' ').filter(Boolean).forEach(playFx);
     save();
