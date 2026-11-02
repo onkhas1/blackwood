@@ -29,7 +29,6 @@
   let path = [];      // стек позиций: [{ list, i }]
   let state = { name: '', pts: {} };
   let waiting = null; // что делает тап
-  let typing = null;
   let curBg = null, bgLayer = 0;
 
   const fill = (s) => s.replaceAll('{имя}', state.name || 'Птица');
@@ -69,27 +68,23 @@
     sprite.dataset.key = key;
     sprite.style.height = whoKey === 'karen' ? '78%' : '';
     sprite.classList.remove('on');
+    const url = `assets/sprites/${key}.webp`;
+    if (sprite.getAttribute('src') === url && sprite.complete && sprite.naturalWidth) { sprite.classList.add('on'); return; }
     sprite.onload = () => { if (sprite.dataset.key === key) sprite.classList.add('on'); };
-    sprite.src = `assets/sprites/${key}.webp`;
+    sprite.src = url;
   }
 
   function showOnly(el) {
     for (const x of [box, choices, nameForm, letter]) x.hidden = x !== el;
   }
 
-  function typeLine(str, done) {
-    box.classList.remove('done');
-    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduce) { text.textContent = str; box.classList.add('done'); done(); return; }
-    let k = 0;
-    text.textContent = '';
-    clearInterval(typing);
-    const finish = () => { clearInterval(typing); typing = null; text.textContent = str; box.classList.add('done'); done(); };
-    typing = setInterval(() => {
-      k += 2;
-      if (k >= str.length) finish(); else text.textContent = str.slice(0, k);
-    }, 26);
-    waiting = finish;
+  function showText(str, done) {
+    box.classList.add('done');
+    text.textContent = str;
+    text.classList.remove('in');
+    void text.offsetWidth;
+    text.classList.add('in');
+    done();
   }
 
   function next() {
@@ -123,8 +118,9 @@
 
   function line(step) {
     showOnly(box);
-    if (step.hide) setSprite(null);
-    else if (step.who) setSprite(step.who, step.emo);
+    // Герой в кадре только на своей реплике
+    if (step.hide || !(step.speak || step.isMe)) setSprite(null);
+    else setSprite(step.who, step.emo);
     who.textContent = (step.isMe ? state.name || 'Я' : (step.speak ? NAMES[step.who] : ''));
     const tone = step.isMe ? 'heroine' : step.speak ? step.who : '';
     box.classList.toggle('speech', !!tone);
@@ -133,7 +129,7 @@
     (step.fx || '').split(' ').filter(Boolean).forEach(playFx);
     save();
     $('sr').textContent = (who.textContent ? who.textContent + ': ' : '') + fill(step.t);
-    typeLine(fill(step.t), () => { waiting = next; });
+    showText(fill(step.t), () => { waiting = next; });
   }
 
   function choose(step) {
