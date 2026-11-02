@@ -1,5 +1,5 @@
 // Эпизод 1 «Приезд». Источник текста: ../episode-1/
-const n = (t, o = {}) => ({ type: 'line', t, …o });
+const n = (t, o = {}) => ({ type: 'line', t, ...o });
 const say = (who, emo, t) => ({ type: 'line', who, emo, t, speak: true });
 const me = (emo, t) => ({ type: 'line', who: 'heroine', emo, t, isMe: true });
 const bg = (id) => ({ type: 'bg', id });
