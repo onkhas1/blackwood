@@ -20,19 +20,19 @@
   const num = (n) => n.toLocaleString('ru-RU');
   const BOLT = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2.5 5 13.5h6l-1 8 8-11h-6z"/></svg>';
 
-  let wallet = readWallet();
+  let wallet = null;
   let openStory = null;
   let sureTimer = null;
 
   function readWallet() {
     try {
-      const w = JSON.parse(localStorage.getItem(WALLET_KEY));
+      const w = JSON.parse(window.STORE.get(WALLET_KEY));
       if (w && Number.isFinite(w.energy)) return w;
     } catch {}
     return { energy: START_ENERGY, coins: 0, at: Date.now(), promos: [] };
   }
   function saveWallet() {
-    try { localStorage.setItem(WALLET_KEY, JSON.stringify(wallet)); } catch {}
+    window.STORE.set(WALLET_KEY, JSON.stringify(wallet));
   }
   // Энергия считается по времени, поэтому копится и пока игра закрыта
   function regen() {
@@ -59,9 +59,10 @@
     saveWallet();
     return true;
   }
-  const isDone = () => { try { return localStorage.getItem(DONE_KEY) === '1'; } catch { return false; } };
+  const isDone = () => window.STORE.get(DONE_KEY) === '1';
   function setDone(v) {
-    try { v ? localStorage.setItem(DONE_KEY, '1') : localStorage.removeItem(DONE_KEY); } catch {}
+    if (v) window.STORE.set(DONE_KEY, '1');
+    else if (isDone()) window.STORE.remove(DONE_KEY);
   }
 
   function storyStatus() {
@@ -153,12 +154,14 @@
     $('menu').scrollTop = 0;
     resetSure();
     renderDetail();
+    syncBack();
   }
   function showList() {
     openStory = null;
     $('detail').hidden = true;
     $('stories').hidden = false;
     renderList();
+    syncBack();
   }
 
   function open() {
@@ -166,6 +169,29 @@
     $('menu').hidden = false;
     renderWallet();
     if (openStory) renderDetail(); else renderList();
+    syncBack();
+  }
+
+  // В Telegram кнопка «назад» в его шапке ведёт туда же, куда наши стрелки
+  const tg = window.STORE.tg;
+  function syncBack() {
+    if (!tg || !tg.isVersionAtLeast('6.1')) return;
+    if ($('menu').hidden || openStory) tg.BackButton.show();
+    else tg.BackButton.hide();
+  }
+  if (tg) {
+    tg.ready();
+    tg.expand();
+    if (tg.isVersionAtLeast('6.1')) {
+      tg.setHeaderColor('#222842');
+      tg.setBackgroundColor('#161a2c');
+      tg.BackButton.onClick(() => {
+        if (!$('sheet').hidden) closeSheet();
+        else if ($('menu').hidden) $('exit').click();
+        else showList();
+      });
+    }
+    if (tg.isVersionAtLeast('7.7')) tg.disableVerticalSwipes(); // иначе свайп по игре сворачивает окно
   }
 
   function resetSure() {
@@ -175,8 +201,9 @@
 
   $('mainAct').addEventListener('click', () => {
     const st = storyStatus();
-    if (st.kind === 'playing' || st.kind === 'locked') { window.GAME.resume(); return; }
-    if (pay()) { setDone(false); window.GAME.begin(); }
+    if (st.kind === 'playing' || st.kind === 'locked') window.GAME.resume();
+    else if (pay()) { setDone(false); window.GAME.begin(); }
+    syncBack();
   });
   // Начать сначала стирает прогресс, поэтому первое нажатие только переспрашивает
   $('restart').addEventListener('click', () => {
@@ -188,7 +215,7 @@
       return;
     }
     resetSure();
-    if (pay()) { setDone(false); window.GAME.begin(); }
+    if (pay()) { setDone(false); window.GAME.begin(); syncBack(); }
     else { renderWallet(); renderDetail(); openSheet(); }
   });
   $('back').addEventListener('click', showList);
@@ -254,5 +281,5 @@
 
   document.title = APP_NAME;
   window.MENU = { open, payForChapter: pay, markFinished: () => setDone(true) };
-  open();
+  window.STORE.ready.then(() => { wallet = readWallet(); open(); });
 })();

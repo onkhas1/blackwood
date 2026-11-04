@@ -39,16 +39,16 @@
   const fill = (s) => s.replaceAll('{имя}', state.name || 'Птица');
 
   function save() {
-    try { localStorage.setItem(SAVE_KEY, JSON.stringify({ state, trail: trailOf(), bg: curBg, sprite: sprite.dataset.key || '' })); } catch {}
+    window.STORE.set(SAVE_KEY, JSON.stringify({ state, trail: trailOf(), bg: curBg, sprite: sprite.dataset.key || '' }));
   }
   function trailOf() {
     return path.map((f) => ({ i: f.i, via: f.via }));
   }
   function load() {
-    try { return JSON.parse(localStorage.getItem(SAVE_KEY)); } catch { return null; }
+    try { return JSON.parse(window.STORE.get(SAVE_KEY)); } catch { return null; }
   }
   function clearSave() {
-    try { localStorage.removeItem(SAVE_KEY); } catch {}
+    window.STORE.remove(SAVE_KEY);
   }
 
   function setBg(id) {
