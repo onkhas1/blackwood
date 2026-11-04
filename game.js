@@ -10,7 +10,7 @@
   const LOVE = ['ethan', 'dustin', 'richard', 'logan'];
   const SAVE_KEY = 'blackwood-save-v1';
   // Временные фоны. Когда картинка появится в assets/bg/<id>.webp, id добавляется сюда
-  const READY_BG = ['station', 'car', 'bridge', 'house', 'room', 'roomNight', 'corridor', 'board', 'parking', 'archive', 'porch', 'kitchen', 'dinner'];
+  const READY_BG = ['station', 'car', 'bridge', 'house', 'room', 'roomNight', 'corridor', 'board', 'parking', 'archive', 'porch', 'kitchen', 'dinner', 'lake', 'pier', 'boat', 'bridgeDay'];
   const BG = {
     station: { rain: true, css: 'radial-gradient(90% 40% at 70% 18%, #3b4a58, transparent), linear-gradient(#17212b, #0a1016 70%)' },
     car: { css: 'radial-gradient(70% 30% at 50% 88%, #2a2118, transparent), linear-gradient(#0a0e13, #05070a)' },
@@ -26,6 +26,8 @@
     kitchen: { css: 'radial-gradient(90% 40% at 50% 20%, #a07a4d, transparent), linear-gradient(#3a2c20, #17110c)' },
     dinner: { css: 'radial-gradient(50% 26% at 50% 12%, #c49a62, transparent), linear-gradient(#2a241e, #0e0c0b)' },
     lake: { css: 'radial-gradient(34% 20% at 50% 70%, #b5652c, transparent), linear-gradient(#0d141c, #111821 55%, #08090b)' },
+    boat: { css: 'linear-gradient(#0d141c, #08090b)' },
+    bridgeDay: { pos: 'right 14px center', css: 'linear-gradient(#aab3b6, #3f4a4a)' },
     pier: { css: 'radial-gradient(60% 18% at 70% 22%, #39505f, transparent), linear-gradient(#0a1016, #05080b)' },
   };
 
