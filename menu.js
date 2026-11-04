@@ -89,7 +89,7 @@
       const st = storyStatus();
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'story';
+      b.className = 'story-row';
       const cover = document.createElement('div');
       cover.className = 'cover';
       cover.style.backgroundImage = `url(${story.cover})`;

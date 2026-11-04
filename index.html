@@ -46,6 +46,9 @@
   <section id="chapter" hidden><small></small><h2></h2><p></p></section>
   <p id="memo" aria-live="polite"></p>
 
+  <button id="sound" type="button" aria-label="Звук" aria-pressed="true">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path class="spk" d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/><path class="on" d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a7.8 7.8 0 0 1 0 11"/><path class="off" d="M15.5 9.5l5 5M20.5 9.5l-5 5"/></svg>
+  </button>
   <button id="exit" type="button" aria-label="В меню">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
   </button>
@@ -91,7 +94,7 @@
           <button type="button" class="quiet" id="restart" hidden></button>
         </div>
       </article>
-      <small id="ver">сборка 22</small>
+      <small id="ver">сборка 24</small>
     </div>
   </section>
 
@@ -114,6 +117,7 @@
   </div>
 </main>
 <script src="store.js"></script>
+<script src="sound.js"></script>
 <script src="story.js"></script>
 <script src="story-2.js"></script>
 <script src="game.js"></script>

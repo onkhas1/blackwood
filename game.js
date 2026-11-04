@@ -3,7 +3,7 @@
   const stage = $('stage'), box = $('box'), who = $('who'), text = $('text'), sprite = $('sprite');
   const choices = $('choices'), nameForm = $('nameForm'), nameInput = $('nameInput');
   const letter = $('letter'), menu = $('menu'), exitBtn = $('exit');
-  const chapter = $('chapter'), memo = $('memo');
+  const chapter = $('chapter'), memo = $('memo'), soundBtn = $('sound');
 
   const NAMES = { mia: 'Мия', karen: 'Карен', norman: 'Норман', ethan: 'Итан', jane: 'Джейн', dustin: 'Дастин', richard: 'Ричард', logan: 'Логан' };
   const ACCENT = { mia: '#d9c27a', norman: '#d9a25f', richard: '#8fb7d6', dustin: '#c76a7c', logan: '#8db07a', ethan: '#a6a9d8', jane: '#e08abf', karen: '#d7b48a', heroine: '#e6c98a' };
@@ -66,6 +66,7 @@
     el.classList.add('on');
     old.classList.remove('on');
     rainOn = !!def.rain;
+    window.SOUND.ambient(id);
   }
 
   function setSprite(whoKey, emo) {
@@ -139,6 +140,7 @@
 
   // Эффекты: класс перезапускается, чтобы анимация шла каждый раз
   function playFx(name) {
+    window.SOUND.fx(name);
     const target = { pulse: $('pulse'), chill: $('chill'), flash: $('flash') }[name] || $('scene');
     const cls = 'fx-' + name;
     target.classList.remove('fx-shake', 'fx-thud', 'fx-rumble', cls);
@@ -197,6 +199,7 @@
   function remember(set) {
     const key = Object.keys(set || {}).find((k) => LOVE.includes(k));
     if (!key) return;
+    window.SOUND.memo();
     memo.textContent = `${NAMES[key]} это запомнит`;
     memo.classList.remove('on');
     void memo.offsetWidth;
@@ -215,6 +218,7 @@
       b.textContent = fill(o.t);
       b.onclick = (e) => {
         e.stopPropagation();
+        window.SOUND.choice();
         for (const [k, v] of Object.entries(o.set || {})) state.pts[k] = (state.pts[k] || 0) + v;
         remember(o.set);
         const parent = path[path.length - 1];
@@ -254,6 +258,7 @@
   function showLetter(step) {
     showOnly(letter);
     setSprite(null);
+    window.SOUND.paper();
     letter.textContent = '';
     const sheet = document.createElement('div');
     sheet.className = 'sheet';
@@ -304,6 +309,7 @@
       if (last && list[last[0]]) list = list[last[0]].options[last[1]].then || [];
     }
     if (s.bg) setBg(s.bg);
+    window.SOUND.ambient(curBg);
     if (s.sprite) { const [a, b] = s.sprite.split('_'); setSprite(a, b); }
     const top = path[path.length - 1];
     if (top) top.i = Math.max(0, top.i - 1);
@@ -312,7 +318,7 @@
 
   function tap() {
     if (!menu.hidden) return;
-    if (waiting) { const w = waiting; waiting = null; w(); }
+    if (waiting) { window.SOUND.tap(); const w = waiting; waiting = null; w(); }
   }
   stage.addEventListener('click', tap);
   addEventListener('keydown', (e) => {
@@ -332,7 +338,14 @@
     waiting = null;
     showOnly(null);
     setSprite(null);
+    window.SOUND.ambient(null);
   }
+  soundBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    soundBtn.setAttribute('aria-pressed', String(window.SOUND.toggle()));
+  });
+  soundBtn.setAttribute('aria-pressed', String(window.SOUND.isOn()));
+
   window.GAME = { begin, resume: () => restore(load()), saved: load, toMenu };
   setBg('station');
 
