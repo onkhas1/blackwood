@@ -2,10 +2,12 @@
   const $ = (id) => document.getElementById(id);
   const stage = $('stage'), box = $('box'), who = $('who'), text = $('text'), sprite = $('sprite');
   const choices = $('choices'), nameForm = $('nameForm'), nameInput = $('nameInput');
-  const letter = $('letter'), title = $('title'), startBtn = $('start'), restartBtn = $('restart');
+  const letter = $('letter'), menu = $('menu'), exitBtn = $('exit');
+  const chapter = $('chapter'), memo = $('memo');
 
-  const NAMES = { karen: 'Карен', norman: 'Норман', ethan: 'Итан', jane: 'Джейн', dustin: 'Дастин', richard: 'Ричард', logan: 'Логан' };
-  const ACCENT = { norman: '#d9a25f', richard: '#8fb7d6', dustin: '#c76a7c', logan: '#8db07a', ethan: '#a6a9d8', jane: '#e08abf', karen: '#d7b48a', heroine: '#e6c98a' };
+  const NAMES = { mia: 'Мия', karen: 'Карен', norman: 'Норман', ethan: 'Итан', jane: 'Джейн', dustin: 'Дастин', richard: 'Ричард', logan: 'Логан' };
+  const ACCENT = { mia: '#d9c27a', norman: '#d9a25f', richard: '#8fb7d6', dustin: '#c76a7c', logan: '#8db07a', ethan: '#a6a9d8', jane: '#e08abf', karen: '#d7b48a', heroine: '#e6c98a' };
+  const LOVE = ['ethan', 'dustin', 'richard', 'logan'];
   const SAVE_KEY = 'blackwood-save-v1';
   // Временные фоны. Когда картинка появится в assets/bg/<id>.webp, id добавляется сюда
   const READY_BG = ['station', 'car', 'bridge', 'house', 'room', 'roomNight', 'corridor', 'board', 'parking', 'archive', 'porch', 'kitchen', 'dinner'];
@@ -23,6 +25,8 @@
     porch: { rain: true, css: 'radial-gradient(40% 24% at 74% 22%, #a97d48, transparent), linear-gradient(#18202a, #080b0f)' },
     kitchen: { css: 'radial-gradient(90% 40% at 50% 20%, #a07a4d, transparent), linear-gradient(#3a2c20, #17110c)' },
     dinner: { css: 'radial-gradient(50% 26% at 50% 12%, #c49a62, transparent), linear-gradient(#2a241e, #0e0c0b)' },
+    lake: { css: 'radial-gradient(34% 20% at 50% 70%, #b5652c, transparent), linear-gradient(#0d141c, #111821 55%, #08090b)' },
+    pier: { css: 'radial-gradient(60% 18% at 70% 22%, #39505f, transparent), linear-gradient(#0a1016, #05080b)' },
   };
 
   let rainOn = true;
@@ -78,7 +82,7 @@
   }
 
   function showOnly(el) {
-    for (const x of [box, choices, nameForm, letter]) x.hidden = x !== el;
+    for (const x of [box, choices, nameForm, letter, chapter]) x.hidden = x !== el;
   }
 
   // Текст появляется по нескольку слов, а окно сразу занимает итоговый размер.
@@ -125,7 +129,9 @@
       case 'choice': return choose(step);
       case 'name': return askName();
       case 'letter': return showLetter(step);
-      case 'end': return theEnd();
+      case 'if': return branch(step);
+      case 'chapter': return showChapter(step);
+      case 'end': return theEnd(step);
     }
   }
 
@@ -154,18 +160,61 @@
     showText(fill(step.t), () => { waiting = next; });
   }
 
+  function branch(step) {
+    const idx = step.test(state.pts) ? 0 : 1;
+    const parent = path[path.length - 1];
+    parent.via = (parent.via || []).concat([[parent.i - 1, idx]]);
+    path.push({ list: step.options[idx].then, i: 0 });
+    next();
+  }
+
+  // Новая глава стоит энергию. Не хватает: прогресс остаётся здесь, игрок уходит в меню ждать
+  function showChapter(step) {
+    if (!state.paid) state.paid = [];
+    state.chapter = { num: step.num, title: step.title };
+    if (!state.paid.includes(step.num)) {
+      if (!window.MENU.payForChapter()) {
+        state.locked = true;
+        save();
+        window.MENU.open();
+        return;
+      }
+      state.paid.push(step.num);
+    }
+    state.locked = false;
+    showOnly(chapter);
+    setSprite(null);
+    chapter.querySelector('small').textContent = step.n;
+    chapter.querySelector('h2').textContent = step.title;
+    chapter.querySelector('p').textContent = '';
+    save();
+    waiting = next;
+  }
+
+  // Что герой запомнил: плюс это или минус, игрок узнаёт только по тому, как тот будет вести себя дальше
+  function remember(set) {
+    const key = Object.keys(set || {}).find((k) => LOVE.includes(k));
+    if (!key) return;
+    memo.textContent = `${NAMES[key]} это запомнит`;
+    memo.classList.remove('on');
+    void memo.offsetWidth;
+    memo.classList.add('on');
+  }
+
   function choose(step) {
     showOnly(choices);
     choices.textContent = '';
     choices.classList.toggle('popup', !!step.prompt);
     if (step.prompt) { const h = document.createElement('h2'); h.textContent = step.prompt; choices.append(h); }
     step.options.forEach((o, idx) => {
+      if (o.when && !o.when(state.pts)) return;
       const b = document.createElement('button');
       b.type = 'button';
       b.textContent = fill(o.t);
       b.onclick = (e) => {
         e.stopPropagation();
         for (const [k, v] of Object.entries(o.set || {})) state.pts[k] = (state.pts[k] || 0) + v;
+        remember(o.set);
         const parent = path[path.length - 1];
         parent.via = (parent.via || []).concat([[parent.i - 1, idx]]);
         path.push({ list: o.then || [], i: 0 });
@@ -217,36 +266,30 @@
     save();
   }
 
-  function theEnd() {
+  function theEnd(step) {
     clearSave();
-    waiting = null;
-    showOnly(null);
-    box.hidden = true;
-    letter.hidden = true;
-    title.hidden = false;
+    window.MENU.markFinished();
+    showOnly(chapter);
     setSprite(null);
-    title.querySelector('h1').textContent = 'Конец первого эпизода';
-    title.querySelector('h1').style.fontSize = 'clamp(46px, 14vw, 62px)';
-    title.querySelector('p').textContent = 'Продолжение пишется.';
-    startBtn.textContent = 'Сыграть ещё раз';
-    restartBtn.hidden = true;
+    chapter.querySelector('small').textContent = '';
+    chapter.querySelector('h2').textContent = step.title;
+    chapter.querySelector('p').textContent = 'Продолжение пишется.';
+    waiting = () => window.MENU.open();
   }
 
-  function begin(fromSave) {
-    title.hidden = true;
-    if (!fromSave) {
-      state = { name: '', pts: {} };
-      path = [{ list: window.STORY, i: 0 }];
-      curBg = null;
-      clearSave();
-      next();
-    } else {
-      restore(fromSave);
-    }
+  function begin() {
+    menu.hidden = true;
+    state = { name: '', pts: {}, chapter: { num: 1, title: 'Приезд' }, paid: [1] };
+    path = [{ list: window.STORY, i: 0 }];
+    curBg = null;
+    clearSave();
+    showOnly(null);
+    next();
   }
 
   // Восстановление: проходим историю заново без показа
   function restore(s) {
+    menu.hidden = true;
     state = s.state;
     path = [{ list: window.STORY, i: 0, via: [] }];
     const t = s.trail;
@@ -266,7 +309,7 @@
   }
 
   function tap() {
-    if (!title.hidden) return;
+    if (!menu.hidden) return;
     if (waiting) { const w = waiting; waiting = null; w(); }
   }
   stage.addEventListener('click', tap);
@@ -274,24 +317,22 @@
     if ((e.key === ' ' || e.key === 'Enter') && e.target === document.body) { e.preventDefault(); tap(); }
   });
 
-  startBtn.addEventListener('click', (e) => {
+  // Выход в меню: всё и так сохранено на каждой реплике
+  exitBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    const s = startBtn.dataset.resume ? load() : null;
-    begin(s);
-  });
-  restartBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (confirm('Начать сначала? Сохранение удалится.')) begin(null);
+    clearInterval(reveal);
+    waiting = null;
+    window.MENU.open();
   });
 
-  // Экран при входе
-  setBg('station');
-  const saved = load();
-  if (saved) {
-    startBtn.textContent = 'Продолжить';
-    startBtn.dataset.resume = '1';
-    restartBtn.hidden = false;
+  function toMenu() {
+    clearInterval(reveal);
+    waiting = null;
+    showOnly(null);
+    setSprite(null);
   }
+  window.GAME = { begin, resume: () => restore(load()), saved: load, toMenu };
+  setBg('station');
 
   // Дождь
   const cv = $('rain'), ctx = cv.getContext('2d');
